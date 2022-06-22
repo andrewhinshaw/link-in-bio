@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { getSession } from "next-auth/react";
+import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
 import LoginButton from "../components/LoginButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import randomWords from "random-words";
 import prisma from "../lib/prisma";
+import { Router } from "next/router";
 
 const styles = {
 	input: {
@@ -15,6 +17,8 @@ const styles = {
 }
 
 const Home = ({ session, user, randomSlug }) => {
+
+	const router = useRouter();
 
 	const [userEnteredSlug, setUserEnteredSlug] = useState(undefined);
 
@@ -30,7 +34,7 @@ const Home = ({ session, user, randomSlug }) => {
 		return resultJson.isAvailable;
 	}
 
-	const validateOnSubmit = async (e) => {
+	const validateAndSubmitForm = async (e) => {
 		e.preventDefault();
 
 		// Characters used must be letters, numbers, or underscores
@@ -58,6 +62,23 @@ const Home = ({ session, user, randomSlug }) => {
 		const isFullyValidated = isValidCharacters && isValidLength && isAvailable;
 		setIsUserEnteredSlugFullyValidated(isFullyValidated);
 
+		if (isFullyValidated) {
+			// Send POST request to server to create new userLinkPage
+			const result = await fetch("/api/pages", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({ slug: userEnteredSlug })
+			});
+			const resultJson = await result.json();
+			const page = resultJson?.page;
+
+			if (page) {
+				router.push(`/${userEnteredSlug}`);
+			}
+		}
+
 		setLoadingCheckAvailability(false);
 	}
 
@@ -67,7 +88,7 @@ const Home = ({ session, user, randomSlug }) => {
 				<h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900">All your links in one place</h5>
 			</a>
 			<p className="mb-3 font-normal text-gray-700">Claim your link page now👇</p>
-			<form onSubmit={(e) => validateOnSubmit(e)}>
+			<form onSubmit={(e) => validateAndSubmitForm(e)}>
 				<div className="mb-4">
 					<div className="flex">
 						<span className="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 rounded-l-md border border-r-0 border-gray-300">
@@ -140,15 +161,25 @@ const getServerSideProps = async ({ req }) => {
 
 	const result = await prisma.user.findUnique({
 		where: { email: session.user.email },
-		include: { userLinkPage: true },
+		include: { pages: true },
 	});
+
+	// If a user already has a page, redirect them to their page
+	if (result.hasPage && result.pages.length >= 1) {
+		return {
+			redirect: {
+				destination: `/${result.pages[0].slug}`,
+				permanent: false
+			}
+		}
+	}
 
 	let randomSlug;
 
 	while (true) {
 		const myWords = randomWords(2);
 		randomSlug = myWords[0] + "-" + myWords[1];
-		const slugExists = await prisma.userLinkPage.findUnique({
+		const slugExists = await prisma.page.findUnique({
 			where: { slug: randomSlug }
 		});
 
