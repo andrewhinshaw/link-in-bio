@@ -1,29 +1,100 @@
-import React from "react";
+import React, { useState } from "react";
 import { getSession } from "next-auth/react";
 import Head from "next/head";
 import Image from "next/image";
 import LoginButton from "../components/LoginButton";
+import LoadingSpinner from "../components/LoadingSpinner";
 import randomWords from "random-words";
 import prisma from "../lib/prisma";
 
-const Home = ({ session, user, randomSlug }) => {	
+const styles = {
+	input: {
+		ok: "rounded-none rounded-r-lg bg-gray-50 border text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm border-gray-300 p-2.5",
+		error: "rounded-none rounded-r-lg bg-red-50 border border-red-500 text-red-900 placeholder-red-700 focus:ring-red-500 focus:border-red-500 block w-full text-sm  p-2.5"
+	}
+}
+
+const Home = ({ session, user, randomSlug }) => {
+
+	const [userEnteredSlug, setUserEnteredSlug] = useState(undefined);
+
+	const [isUserEnteredSlugValidCharacters, setIsUserEnteredSlugValidCharacters] = useState(true);
+	const [isUserEnteredSlugValidLength, setIsUserEnteredSlugValidLength] = useState(true);
+	const [isUserEnteredSlugAvailable, setIsUserEnteredSlugAvailable] = useState(true);
+	const [isUserEnteredSlugFullyValidated, setIsUserEnteredSlugFullyValidated] = useState(true);
+
+	const [loadingCheckAvailability, setLoadingCheckAvailability] = useState(false);
+	const handleCheckAvailability = async () => {
+		const result = await fetch(`/api/users/check-availability?slug=${userEnteredSlug}`);
+		const resultJson = await result.json();
+		return resultJson.isAvailable;
+	}
+
+	const validateOnSubmit = async (e) => {
+		e.preventDefault();
+
+		// Characters used must be letters, numbers, or underscores
+		const isValidCharacters = /^(?:[A-Za-z0-9_]+)$/.test(userEnteredSlug);
+		setIsUserEnteredSlugValidCharacters(isValidCharacters);
+
+		// Length of slug must be greater than or equal to 3
+		const slugLength = typeof userEnteredSlug == "string" ? userEnteredSlug.length : 0;
+		const isValidLength = slugLength >= 3;
+		setIsUserEnteredSlugValidLength(isValidLength);
+
+		// If characters or length not valid, we can skip the availability check
+		if (!isValidCharacters || !isValidLength) {
+			setIsUserEnteredSlugFullyValidated(false);
+			return
+		}
+
+		setLoadingCheckAvailability(true);
+
+		// Slug must be available for use, check availability via api call
+		const isAvailable = await handleCheckAvailability();
+		setIsUserEnteredSlugAvailable(isAvailable);
+
+		// Finally, we can determine if the slug has passed all checks
+		const isFullyValidated = isValidCharacters && isValidLength && isAvailable;
+		setIsUserEnteredSlugFullyValidated(isFullyValidated);
+
+		setLoadingCheckAvailability(false);
+	}
 
 	const newLinkPageMarkup = (
 		<div>
 			<a href="#">
-				<h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900">Claim your link page now!</h5>
+				<h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900">All your links in one place</h5>
 			</a>
-			<p className="mb-3 font-normal text-gray-700">Store all your favorite links in one place. Check availability below👇</p>
-			<div className="flex mb-4">
-				<span className="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 rounded-l-md border border-r-0 border-gray-300">
-					linkinbio.com/
-				</span>
-				<input type="text" id="website-admin" className="rounded-none rounded-r-lg bg-gray-50 border text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm border-gray-300 p-2.5" placeholder={randomSlug} />
-			</div>
-			<a href="#" className="inline-flex items-center py-2 px-3 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 ">
-				Check availability
-				<svg className="ml-2 -mr-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
-			</a>
+			<p className="mb-3 font-normal text-gray-700">Claim your link page now👇</p>
+			<form onSubmit={(e) => validateOnSubmit(e)}>
+				<div className="mb-4">
+					<div className="flex">
+						<span className="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 rounded-l-md border border-r-0 border-gray-300">
+							linkinbio.com/
+						</span>
+						<input name="slug" type="text" onChange={(e) => {
+							setUserEnteredSlug(e.target.value)
+						}} className={isUserEnteredSlugFullyValidated ? styles.input.ok : styles.input.error} placeholder={randomSlug} />
+					</div>
+					{userEnteredSlug == "" &&
+						<p className="mt-2 text-xs text-red-600 dark:text-red-500">Please enter a link page URL</p>
+					}
+					{!isUserEnteredSlugValidCharacters &&
+						<p className="mt-2 text-xs text-red-600 dark:text-red-500">Link page URLs can only contain letters, numbers, and underscores ("_")</p>
+					}
+					{!isUserEnteredSlugValidLength &&
+						<p className="mt-2 text-xs text-red-600 dark:text-red-500">Link page URLs must be at least 3 characters</p>
+					}
+					{!isUserEnteredSlugAvailable &&
+						<p className="mt-2 text-xs text-red-600 dark:text-red-500">This link page URL is not available</p>
+					}
+				</div>
+				<button disabled={loadingCheckAvailability} className="inline-flex items-center py-2 px-3 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 ">
+					{loadingCheckAvailability ? <LoadingSpinner height={16} width={16} color="#fff" /> : "Claim"}
+					<svg className="ml-2 -mr-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+				</button>
+			</form>
 		</div>
 	);
 
@@ -80,12 +151,10 @@ const getServerSideProps = async ({ req }) => {
 		const slugExists = await prisma.userLinkPage.findUnique({
 			where: { slug: randomSlug }
 		});
-		
+
 		if (!slugExists) break;
 	}
 
-	console.log(randomSlug);
-	
 	// Used to convert datetime fields to strings before returning
 	const user = JSON.parse(JSON.stringify(result));
 
