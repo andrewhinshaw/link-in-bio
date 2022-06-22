@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     return res.status(422).json({ error: "Missing required parameter slug" });
   }
 
-  const slugExists = await prisma.userLinkPage.findUnique({
+  const slugExists = await prisma.page.findUnique({
     where: { slug: slug }
   });
 
