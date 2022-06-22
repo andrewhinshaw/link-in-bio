@@ -1,5 +1,5 @@
 import { getSession, useSession } from 'next-auth/react';
-import prisma from "../lib/prisma";
+import prisma from "../../lib/prisma";
 
 const createLink = async (req, res) => {
   const session = await getSession({ req });
