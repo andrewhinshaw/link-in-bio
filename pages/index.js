@@ -13,6 +13,18 @@ const Home = ({ session }) => {
 
 			<main className="flex w-full flex-1 flex-col items-center justify-center px-20 text-center">
 				<LoginButton />
+				<button onClick={() => {
+					fetch('/api/links', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							linkType: 'twitter',
+							linkUrl: 'https://twitter.com/whatever'
+						})
+					})
+				}}>get session</button>
 			</main>
 
 			<footer className="flex h-24 w-full items-center justify-center border-t">
