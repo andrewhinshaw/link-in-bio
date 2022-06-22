@@ -1,8 +1,9 @@
+import { getSession } from "next-auth/react";
 import Head from "next/head";
 import Image from "next/image";
 import LoginButton from "../components/LoginButton";
 
-const Home = () => {
+const Home = ({ session }) => {
 	return (
 		<div className="flex min-h-screen flex-col items-center justify-center py-2">
 			<Head>
@@ -34,4 +35,19 @@ const Home = () => {
 	);
 };
 
+const getServerSideProps = async ({ req }) => {
+	const session = await getSession({ req });
+
+	if (!session) {
+		return {
+			redirect: {
+				destination: '/api/auth/signin',
+				permanent: false
+			}
+		}
+	}
+	return { props: { session } };
+}
+
 export default Home;
+export { getServerSideProps };
