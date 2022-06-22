@@ -5,17 +5,13 @@ const prisma = new PrismaClient();
 
 const createLink = async (req, res) => {
   const session = await getSession({ req });
-  console.log(session);
+
   if (!session) {
     return res.status(401).json({ unauthorized: true });
   }
 
-  const sessionRecord = await prisma.session.findUnique({
-    where: { sessionToken: session.sessionToken }
-  });
-
   const user = await prisma.user.findUnique({ 
-    where: { id: sessionRecord.userId } 
+    where: { email: session.user.email } 
   });
 
   if (!req.body.linkType || !req.body.linkUrl) {

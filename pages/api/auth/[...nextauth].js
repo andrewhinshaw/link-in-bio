@@ -5,7 +5,7 @@ import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient();
 
-export default NextAuth({
+const options = {
   // Configure one or more authentication providers
   providers: [
     GithubProvider({
@@ -16,7 +16,9 @@ export default NextAuth({
   jwt: {
     signingKey: process.env.JWT_SIGNING_PRIVATE_KEY,
   },
-  
+
   database: process.env.DATABASE_URL,
   adapter: PrismaAdapter(prisma)
-});
+};
+
+export default (req, res) => NextAuth(req, res, options);
