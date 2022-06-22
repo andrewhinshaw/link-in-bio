@@ -35,15 +35,15 @@ model Session {
 }
 
 model User {
-  id              String         @id @default(cuid())
-  name            String?
-  email           String?        @unique
-  emailVerified   DateTime?
-  image           String?
-  hasUserLinkPage Boolean        @default(false)
-  accounts        Account[]
-  sessions        Session[]
-  userLinkPage    UserLinkPage[]
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  hasPage       Boolean   @default(false)
+  accounts      Account[]
+  sessions      Session[]
+  pages         Page[]
 }
 
 model VerificationToken {
@@ -54,7 +54,7 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model UserLinkPage {
+model Page {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id])
@@ -67,12 +67,12 @@ model UserLinkPage {
 }
 
 model Link {
-  id             String        @id @default(cuid())
-  linkType       String
-  linkUrl        String
-  userId         String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  UserLinkPage   UserLinkPage? @relation(fields: [userLinkPageId], references: [id])
-  userLinkPageId String?
+  id        String   @id @default(cuid())
+  linkType  String
+  linkUrl   String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  page      Page?    @relation(fields: [pageId], references: [id])
+  pageId    String?
 }
