@@ -30,7 +30,7 @@ const LinkPage = ({ userPageData }) => {
   });
 
   const [isDataChanged, setIsDataChanged] = useState(false);
-  const [isEditingModeEnabled, setIsEditingModeEnabled] = useState(false);
+  const [isPageEditingModeEnabled, setIsEditingModeEnabled] = useState(false);
   const [isDiscardChangesModalOpen, setIsDiscardChangesModalOpen] = useState(false);
   const [resetChanges, setResetChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -69,7 +69,7 @@ const LinkPage = ({ userPageData }) => {
 
   // Enables/disables editing mode
   const handleToggleEditing = () => {
-    if (isEditingModeEnabled) {
+    if (isPageEditingModeEnabled) {
       if (!_.isEqual(initialData.current, currentData)) {
         // We're in editing mode AND there are data changes detected 
         // Show the user a modal to confirm discarding changes
@@ -218,7 +218,7 @@ const LinkPage = ({ userPageData }) => {
       {/* Edit and save buttons */}
       <div className="absolute top-4 right-4 flex flex-row justify-center items-center">
         {/* If we're in editing mode and the data has changed, show the save changes button */}
-        {isEditingModeEnabled && isDataChanged ? (
+        {isPageEditingModeEnabled && isDataChanged ? (
           <a onClick={handleSaveChanges} className="mr-2 rounded-full bg-blue-500 text-white font-medium text-sm py-1 px-3 cursor-pointer hover:bg-blue-600">
             <div className="flex flex-row items-center">
               {isSaving && <LoadingSpinner height={12} width={12} color="#fff" className="mr-2" />}
@@ -230,7 +230,7 @@ const LinkPage = ({ userPageData }) => {
           onClick={handleToggleEditing}
           className="rounded-full p-2 cursor-pointer hover:bg-gray-100 text-gray-500"
         >
-          {isEditingModeEnabled ? (
+          {isPageEditingModeEnabled ? (
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
@@ -276,7 +276,7 @@ const LinkPage = ({ userPageData }) => {
             identifier="displayName"
             value={currentData.displayName}
             setValue={handleSetEditedValue}
-            isEditing={isEditingModeEnabled}
+            isEditing={isPageEditingModeEnabled}
             reset={resetChanges}
             setReset={setResetChanges}
             className="mt-12 text-xl font-medium text-gray-900 text-center"
@@ -285,7 +285,7 @@ const LinkPage = ({ userPageData }) => {
             identifier="occupation"
             value={currentData.occupation}
             setValue={handleSetEditedValue}
-            isEditing={isEditingModeEnabled}
+            isEditing={isPageEditingModeEnabled}
             reset={resetChanges}
             setReset={setResetChanges}
             className="text-base text-gray-700 mb-2 text-center"
@@ -294,7 +294,7 @@ const LinkPage = ({ userPageData }) => {
             identifier="location"
             value={currentData.location}
             setValue={handleSetEditedValue}
-            isEditing={isEditingModeEnabled}
+            isEditing={isPageEditingModeEnabled}
             reset={resetChanges}
             setReset={setResetChanges}
             className="text-sm text-gray-400 mb-2 text-center"
@@ -303,13 +303,15 @@ const LinkPage = ({ userPageData }) => {
             identifier="description"
             value={currentData.description}
             setValue={handleSetEditedValue}
-            isEditing={isEditingModeEnabled}
+            isEditing={isPageEditingModeEnabled}
             reset={resetChanges}
             setReset={setResetChanges}
             className="text-sm text-gray-700 mb-2 text-center"
           />
-          <LinkButton url="https://twitter.com" text="Follow my tweets!" />
-          {isEditingModeEnabled ? <LinkButtonEmptyState /> : null}
+          {userPageData.links.map((link, index) => (
+            <LinkButton key={index} url={link.url} displayText={link.displayText} linkId={link.id} isPageEditingModeEnabled={isPageEditingModeEnabled} />
+          ))}
+          {isPageEditingModeEnabled && userPageData.links.length <= 10 ? <LinkButtonEmptyState /> : null}
         </div>
       </div>
     </div>
@@ -326,6 +328,7 @@ const getServerSideProps = async ({ req, res, params }) => {
       where: { slug: slug },
       include: {
         user: true,
+        links: true
       },
     });
 
