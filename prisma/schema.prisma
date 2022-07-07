@@ -69,12 +69,13 @@ model Page {
 }
 
 model Link {
-  id        String   @id @default(cuid())
-  linkType  String
-  linkUrl   String
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  page      Page?    @relation(fields: [pageId], references: [id])
-  pageId    String?
+  id          String   @id @default(cuid())
+  type        String
+  url         String
+  displayText String
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  page        Page?    @relation(fields: [pageId], references: [id])
+  pageId      String?
 }
