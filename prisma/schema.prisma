@@ -70,9 +70,9 @@ model Page {
 
 model Link {
   id          String   @id @default(cuid())
-  type        String
-  url         String
-  displayText String
+  type        String   @default("")
+  url         String   @default("")
+  displayText String   @default("")
   userId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
